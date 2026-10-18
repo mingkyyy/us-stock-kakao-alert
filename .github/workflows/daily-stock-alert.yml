@@ -1,0 +1,29 @@
+name: Daily US Stock Kakao Alert
+
+on:
+  schedule:
+    # 21:30 UTC, Mon-Fri = always at least 30min after US market close (4PM ET)
+    # KST: 06:30 (겨울/EST 기간) 또는 05:30 (여름/EDT 기간)
+    - cron: "30 21 * * 1-5"
+  workflow_dispatch: {}
+
+jobs:
+  send-alert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run report and send Kakao message
+        env:
+          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
+          KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python main.py

@@ -1,0 +1,8 @@
+[
+  {"ticker": "AAPL", "shares": 3, "avg_price": 279.1286},
+  {"ticker": "GOOGL", "shares": 7, "avg_price": 348.1242},
+  {"ticker": "NVDA", "shares": 6, "avg_price": 186.9753},
+  {"ticker": "QLD", "shares": 6, "avg_price": 93.3800},
+  {"ticker": "SOXL", "shares": 6, "avg_price": 112.3067},
+  {"ticker": "TSLA", "shares": 1, "avg_price": 361.9405}
+]
