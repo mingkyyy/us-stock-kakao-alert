@@ -1,58 +1,42 @@
-# 미장 마감 포트폴리오 카톡 알림
+# 미장 마감 포트폴리오 텔레그램 알림
 
-매일 미국 주식시장 마감 후, 보유 종목의 전일 대비 수익률 / 평단가 대비 수익률 / 전체 포트폴리오 수익률을 카카오톡 "나에게 보내기"로 받습니다.
+매일 미국 주식시장 마감 후, 보유 종목의 전일 대비 수익률 / 평단가 대비 수익률 / 전체 포트폴리오 수익률을 텔레그램 봇으로 받습니다.
 
 ## 구조
 
 - `portfolio.json` — 보유 종목(티커, 수량, 평단가). 매수/매도할 때마다 직접 수정.
 - `scripts/fetch_and_calc.py` — yfinance로 현재가/전일종가 조회 후 리포트 텍스트 생성.
-- `scripts/kakao_send.py` — Access Token 갱신 후 "나에게 보내기" 전송.
-- `scripts/update_github_secret.py` — Kakao가 refresh_token을 재발급하면 GitHub Secret에 다시 저장.
-- `scripts/get_kakao_token.py` — **최초 1회만** 로컬에서 직접 실행하는 OAuth 인증 헬퍼.
+- `scripts/telegram_send.py` — 텔레그램 봇 API로 메시지 전송.
 - `main.py` — 위 과정을 순서대로 실행하는 진입점. GitHub Actions가 매일 이걸 실행.
 - `.github/workflows/daily-stock-alert.yml` — 매일 미장 마감 후 자동 실행되는 스케줄러.
 
 ## 설정 순서
 
-### 1. 카카오 디벨로퍼스 앱 등록 (직접 진행)
+### 1. 텔레그램 봇 생성 (직접 진행)
 
-1. https://developers.kakao.com 에서 로그인 후 "애플리케이션 추가"
-2. [카카오 로그인] → [일반]에서 "카카오 로그인" 활성화
-3. [앱] → [플랫폼 키] → **REST API 키** 선택 → "카카오 로그인 리다이렉트 URI"에 등록: `https://localhost.com` (아무 URL이든 가능, 실제로 서버를 띄울 필요 없음) → 저장
-   - ⚠️ "카카오 로그인" 메뉴의 "로그아웃 리다이렉트 URI"가 아니라, **[앱] > [플랫폼 키] > REST API 키 설정 화면 안의 "카카오 로그인 리다이렉트 URI"**입니다. 헷갈리기 쉬우니 주의.
-4. [카카오 로그인] → [동의항목]에서 **카카오톡 메시지 전송** 항목을 "필수 동의"로 설정
-5. [앱] → [플랫폼 키] → REST API 키 화면에서 **REST API 키** 값 복사
-6. 같은 화면의 **클라이언트 시크릿** 섹션에서 코드 생성/복사 (기본적으로 활성화돼 있어서, 토큰 요청 시 이 값이 없으면 401 에러가 남)
+1. 텔레그램 앱에서 **@BotFather** 검색 후 대화 시작
+2. `/newbot` 입력 → 봇 이름(아무거나) → 봇 username(끝에 `bot` 포함 필수, 예: `my_stock_alert_bot`) 입력
+3. 생성 완료되면 **봇 토큰**이 나옴 (`123456789:AAExxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` 형식) → 복사해두기
+4. 방금 만든 봇을 검색해서 **대화 시작** (`/start` 아무 메시지나 전송) — 봇이 나에게 메시지를 보내려면 내가 먼저 봇과 대화를 시작해야 함
 
-### 2. 최초 1회 OAuth 인증으로 refresh_token 발급
+### 2. 내 chat_id 확인
 
-로컬에서 실행 (이 단계는 본인 로그인이 필요해서 자동화할 수 없습니다):
+1. 1단계에서 봇한테 아무 메시지나 보낸 직후, 브라우저에서 아래 주소 접속 (`<봇토큰>` 자리에 3단계에서 받은 토큰 입력):
+   ```
+   https://api.telegram.org/bot<봇토큰>/getUpdates
+   ```
+2. 응답 JSON에서 `"chat":{"id":123456789, ...}` 부분의 숫자를 복사 — 이게 내 `chat_id`
 
-```bash
-cd us-stock-kakao-alert
-pip install -r requirements.txt
-```
+### 3. GitHub repo Secrets 등록
 
-`scripts/get_kakao_token.py` 파일을 열어 `REST_API_KEY`, `CLIENT_SECRET` 값을 1단계에서 복사한 값으로 바꾼 뒤:
-
-```bash
-python scripts/get_kakao_token.py
-```
-
-안내에 따라 브라우저에서 로그인 → 리다이렉트된 URL의 `code=` 값을 복사해서 입력하면 `access_token`, `refresh_token`이 출력됩니다.
-
-### 3. GitHub repo 생성 및 Secrets 등록
-
-이 폴더를 GitHub repo로 push한 뒤, repo Settings → Secrets and variables → Actions 에서 아래 4개를 등록:
+repo Settings → Secrets and variables → Actions 에서 아래 2개를 등록:
 
 | Secret 이름 | 값 |
 |---|---|
-| `KAKAO_REST_API_KEY` | 1단계에서 복사한 REST API 키 |
-| `KAKAO_REFRESH_TOKEN` | 2단계에서 발급받은 refresh_token |
-| `KAKAO_CLIENT_SECRET` | 1단계에서 복사한 클라이언트 시크릿 코드 |
-| `GH_PAT` | repo secret 쓰기 권한이 있는 Personal Access Token (아래 참고) |
+| `TELEGRAM_BOT_TOKEN` | 1단계에서 받은 봇 토큰 |
+| `TELEGRAM_CHAT_ID` | 2단계에서 확인한 chat_id |
 
-**`GH_PAT` 발급**: GitHub → Settings → Developer settings → Personal access tokens → Fine-grained token 생성, 이 repo에 대해 "Secrets" 권한을 Read/Write로 설정. (refresh_token이 재발급될 때마다 workflow가 이 토큰으로 `KAKAO_REFRESH_TOKEN` secret을 스스로 갱신합니다.)
+카카오 때와 달리 토큰 만료/갱신이 없어서 이 2개만 등록하면 끝입니다.
 
 ### 4. 포트폴리오 입력
 
@@ -66,8 +50,8 @@ python scripts/get_kakao_token.py
 
 ### 5. 테스트
 
-- 로컬 테스트 (카톡 전송 없이 계산만): `python scripts/fetch_and_calc.py`
-- 전체 테스트 (카톡 전송 포함, Secrets 환경변수 필요): GitHub repo → Actions 탭 → "Daily US Stock Kakao Alert" → "Run workflow" 로 수동 실행
+- 로컬 테스트 (전송 없이 계산만): `python scripts/fetch_and_calc.py`
+- 전체 테스트 (텔레그램 전송 포함, Secrets 환경변수 필요): GitHub repo → Actions 탭 → "Daily US Stock Telegram Alert" → "Run workflow" 로 수동 실행
 
 ## 스케줄 참고
 
