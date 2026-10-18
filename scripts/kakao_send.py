@@ -23,6 +23,8 @@ def refresh_access_token(rest_api_key: str, refresh_token: str, client_secret: s
         },
         timeout=10,
     )
+    if not resp.ok:
+        print(f"Kakao token refresh failed ({resp.status_code}): {resp.text}")
     resp.raise_for_status()
     return resp.json()
 
@@ -42,15 +44,17 @@ def send_to_me(access_token: str, message: str) -> None:
         data={"template_object": json.dumps(template)},
         timeout=10,
     )
+    if not resp.ok:
+        print(f"Kakao send failed ({resp.status_code}): {resp.text}")
     resp.raise_for_status()
 
 
 def send_report(message: str) -> str | None:
     """Sends the report. Returns a new refresh_token if Kakao rotated it,
     else None."""
-    rest_api_key = os.environ["KAKAO_REST_API_KEY"]
-    refresh_token = os.environ["KAKAO_REFRESH_TOKEN"]
-    client_secret = os.environ["KAKAO_CLIENT_SECRET"]
+    rest_api_key = os.environ["KAKAO_REST_API_KEY"].strip()
+    refresh_token = os.environ["KAKAO_REFRESH_TOKEN"].strip()
+    client_secret = os.environ["KAKAO_CLIENT_SECRET"].strip()
 
     token_data = refresh_access_token(rest_api_key, refresh_token, client_secret)
     send_to_me(token_data["access_token"], message)
