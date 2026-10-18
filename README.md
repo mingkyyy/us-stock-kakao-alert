@@ -1,14 +1,19 @@
-# 미장 마감 포트폴리오 텔레그램 알림
+# 미장 마감 포트폴리오 + 뉴스 브리핑 텔레그램 알림
 
-매일 미국 주식시장 마감 후, 보유 종목의 전일 대비 수익률 / 평단가 대비 수익률 / 전체 포트폴리오 수익률을 텔레그램 봇으로 받습니다.
+1. 매일 미국 주식시장 마감 후, 보유 종목의 전일 대비 수익률 / 평단가 대비 수익률 / 전체 포트폴리오 수익률을 텔레그램 봇으로 받습니다.
+2. 매일 아침 7시 30분, 미국 증시 전반 + 보유 종목 관련 뉴스를 요약해서 받습니다.
 
 ## 구조
 
 - `portfolio.json` — 보유 종목(티커, 수량, 평단가). 매수/매도할 때마다 직접 수정.
-- `scripts/fetch_and_calc.py` — yfinance로 현재가/전일종가 조회 후 리포트 텍스트 생성.
+- `scripts/fetch_and_calc.py` — yfinance로 현재가/전일종가 조회 후 포트폴리오 리포트 텍스트 생성.
+- `scripts/fetch_news.py` — Google News RSS로 시장 전반/종목별 뉴스 헤드라인 수집 (API 키 불필요).
+- `scripts/summarize_news.py` — 수집한 헤드라인을 Claude API로 한국어 브리핑으로 요약.
 - `scripts/telegram_send.py` — 텔레그램 봇 API로 메시지 전송.
-- `main.py` — 위 과정을 순서대로 실행하는 진입점. GitHub Actions가 매일 이걸 실행.
-- `.github/workflows/daily-stock-alert.yml` — 매일 미장 마감 후 자동 실행되는 스케줄러.
+- `main.py` — 포트폴리오 리포트 진입점. 미장 마감 후 GitHub Actions가 실행.
+- `news_main.py` — 뉴스 브리핑 진입점. 매일 아침 7시 30분 GitHub Actions가 실행.
+- `.github/workflows/daily-stock-alert.yml` — 미장 마감 후 포트폴리오 리포트 스케줄러.
+- `.github/workflows/daily-news-digest.yml` — 아침 7시 30분 뉴스 브리핑 스케줄러.
 
 ## 설정 순서
 
@@ -27,18 +32,23 @@
    ```
 2. 응답 JSON에서 `"chat":{"id":123456789, ...}` 부분의 숫자를 복사 — 이게 내 `chat_id`
 
-### 3. GitHub repo Secrets 등록
+### 3. Claude API 키 발급 (뉴스 브리핑용)
 
-repo Settings → Secrets and variables → Actions 에서 아래 2개를 등록:
+[console.anthropic.com](https://console.anthropic.com)에서 API 키 발급. 뉴스 요약 용도로는 호출량이 적어서 비용은 월 몇백 원 수준입니다.
+
+### 4. GitHub repo Secrets 등록
+
+repo Settings → Secrets and variables → Actions 에서 아래 3개를 등록:
 
 | Secret 이름 | 값 |
 |---|---|
 | `TELEGRAM_BOT_TOKEN` | 1단계에서 받은 봇 토큰 |
 | `TELEGRAM_CHAT_ID` | 2단계에서 확인한 chat_id |
+| `ANTHROPIC_API_KEY` | 3단계에서 발급받은 Claude API 키 |
 
-카카오 때와 달리 토큰 만료/갱신이 없어서 이 2개만 등록하면 끝입니다.
+카카오 때와 달리 토큰 만료/갱신이 없어서 이대로 등록하면 끝입니다.
 
-### 4. 포트폴리오 입력
+### 5. 포트폴리오 입력
 
 `portfolio.json`을 실제 보유 종목으로 수정 후 push:
 
@@ -48,13 +58,14 @@ repo Settings → Secrets and variables → Actions 에서 아래 2개를 등록
 ]
 ```
 
-### 5. 테스트
+### 6. 테스트
 
-- 로컬 테스트 (전송 없이 계산만): `python scripts/fetch_and_calc.py`
-- 전체 테스트 (텔레그램 전송 포함, Secrets 환경변수 필요): GitHub repo → Actions 탭 → "Daily US Stock Telegram Alert" → "Run workflow" 로 수동 실행
+- 포트폴리오 리포트 계산만: `python scripts/fetch_and_calc.py`
+- 포트폴리오 리포트 전체(텔레그램 전송 포함): GitHub repo → Actions 탭 → "Daily US Stock Telegram Alert" → "Run workflow"
+- 뉴스 브리핑 전체(텔레그램 전송 포함): GitHub repo → Actions 탭 → "Daily US Stock News Digest" → "Run workflow"
 
 ## 스케줄 참고
 
-- 현재 cron은 매일(월~금) UTC 21:30에 실행 — 미장 마감(미 동부 16:00) 기준 최소 30분 후.
-- 서머타임(3월~11월, EDT)에는 한국시간 새벽 5:30, 겨울(EST)에는 새벽 6:30에 실행됩니다.
-- 더 정확히 맞추고 싶으면 `.github/workflows/daily-stock-alert.yml`의 cron 값을 계절별로 2개 등록해도 됩니다.
+- **포트폴리오 리포트**: 매일(월~금) UTC 21:30 — 미장 마감(미 동부 16:00) 기준 최소 30분 후. 서머타임(3~11월, EDT)엔 한국시간 새벽 5:30, 겨울(EST)엔 새벽 6:30.
+- **뉴스 브리핑**: 매일(주말 포함) UTC 22:30 = 한국시간 아침 7:30 (한국은 서머타임 없어서 연중 고정).
+- 더 정확히 맞추고 싶으면 각 workflow 파일의 cron 값을 조정하면 됩니다.
