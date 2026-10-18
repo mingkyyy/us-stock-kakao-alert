@@ -17,10 +17,12 @@
 ### 1. 카카오 디벨로퍼스 앱 등록 (직접 진행)
 
 1. https://developers.kakao.com 에서 로그인 후 "애플리케이션 추가"
-2. 앱 설정 → "카카오 로그인" 활성화
-3. "카카오 로그인" → "Redirect URI" 등록: `https://localhost.com` (아무 URL이든 가능, 실제로 서버를 띄울 필요 없음)
-4. "카카오 로그인" → "동의항목"에서 **카카오톡 메시지 전송** 항목을 "필수 동의"로 설정
-5. 앱 설정 → "앱 키"에서 **REST API 키** 복사해두기
+2. [카카오 로그인] → [일반]에서 "카카오 로그인" 활성화
+3. [앱] → [플랫폼 키] → **REST API 키** 선택 → "카카오 로그인 리다이렉트 URI"에 등록: `https://localhost.com` (아무 URL이든 가능, 실제로 서버를 띄울 필요 없음) → 저장
+   - ⚠️ "카카오 로그인" 메뉴의 "로그아웃 리다이렉트 URI"가 아니라, **[앱] > [플랫폼 키] > REST API 키 설정 화면 안의 "카카오 로그인 리다이렉트 URI"**입니다. 헷갈리기 쉬우니 주의.
+4. [카카오 로그인] → [동의항목]에서 **카카오톡 메시지 전송** 항목을 "필수 동의"로 설정
+5. [앱] → [플랫폼 키] → REST API 키 화면에서 **REST API 키** 값 복사
+6. 같은 화면의 **클라이언트 시크릿** 섹션에서 코드 생성/복사 (기본적으로 활성화돼 있어서, 토큰 요청 시 이 값이 없으면 401 에러가 남)
 
 ### 2. 최초 1회 OAuth 인증으로 refresh_token 발급
 
@@ -31,7 +33,7 @@ cd us-stock-kakao-alert
 pip install -r requirements.txt
 ```
 
-`scripts/get_kakao_token.py` 파일을 열어 `REST_API_KEY` 값을 1단계에서 복사한 키로 바꾼 뒤:
+`scripts/get_kakao_token.py` 파일을 열어 `REST_API_KEY`, `CLIENT_SECRET` 값을 1단계에서 복사한 값으로 바꾼 뒤:
 
 ```bash
 python scripts/get_kakao_token.py
@@ -41,12 +43,13 @@ python scripts/get_kakao_token.py
 
 ### 3. GitHub repo 생성 및 Secrets 등록
 
-이 폴더를 GitHub repo로 push한 뒤, repo Settings → Secrets and variables → Actions 에서 아래 3개를 등록:
+이 폴더를 GitHub repo로 push한 뒤, repo Settings → Secrets and variables → Actions 에서 아래 4개를 등록:
 
 | Secret 이름 | 값 |
 |---|---|
 | `KAKAO_REST_API_KEY` | 1단계에서 복사한 REST API 키 |
 | `KAKAO_REFRESH_TOKEN` | 2단계에서 발급받은 refresh_token |
+| `KAKAO_CLIENT_SECRET` | 1단계에서 복사한 클라이언트 시크릿 코드 |
 | `GH_PAT` | repo secret 쓰기 권한이 있는 Personal Access Token (아래 참고) |
 
 **`GH_PAT` 발급**: GitHub → Settings → Developer settings → Personal access tokens → Fine-grained token 생성, 이 repo에 대해 "Secrets" 권한을 Read/Write로 설정. (refresh_token이 재발급될 때마다 workflow가 이 토큰으로 `KAKAO_REFRESH_TOKEN` secret을 스스로 갱신합니다.)

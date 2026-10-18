@@ -10,7 +10,7 @@ TOKEN_URL = "https://kauth.kakao.com/oauth/token"
 SEND_URL = "https://kapi.kakao.com/v2/api/talk/memo/default/send"
 
 
-def refresh_access_token(rest_api_key: str, refresh_token: str) -> dict:
+def refresh_access_token(rest_api_key: str, refresh_token: str, client_secret: str) -> dict:
     """Returns the token response dict. May contain a NEW refresh_token
     (Kakao rotates it sometimes) — caller must persist it if present."""
     resp = requests.post(
@@ -19,6 +19,7 @@ def refresh_access_token(rest_api_key: str, refresh_token: str) -> dict:
             "grant_type": "refresh_token",
             "client_id": rest_api_key,
             "refresh_token": refresh_token,
+            "client_secret": client_secret,
         },
         timeout=10,
     )
@@ -49,8 +50,9 @@ def send_report(message: str) -> str | None:
     else None."""
     rest_api_key = os.environ["KAKAO_REST_API_KEY"]
     refresh_token = os.environ["KAKAO_REFRESH_TOKEN"]
+    client_secret = os.environ["KAKAO_CLIENT_SECRET"]
 
-    token_data = refresh_access_token(rest_api_key, refresh_token)
+    token_data = refresh_access_token(rest_api_key, refresh_token, client_secret)
     send_to_me(token_data["access_token"], message)
 
     return token_data.get("refresh_token")

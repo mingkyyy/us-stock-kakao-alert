@@ -18,6 +18,8 @@ import requests
 
 REST_API_KEY = "<YOUR_REST_API_KEY>"
 REDIRECT_URI = "https://localhost.com"
+# 앱 > 플랫폼 키 > REST API 키 > 클라이언트 시크릿 > 코드 에서 복사
+CLIENT_SECRET = "<YOUR_CLIENT_SECRET>"
 
 AUTHORIZE_URL = (
     "https://kauth.kakao.com/oauth/authorize?"
@@ -48,6 +50,7 @@ def main() -> None:
             "client_id": REST_API_KEY,
             "redirect_uri": REDIRECT_URI,
             "code": code,
+            "client_secret": CLIENT_SECRET,
         },
         timeout=10,
     )
