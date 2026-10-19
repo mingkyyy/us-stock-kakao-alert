@@ -13,7 +13,7 @@
 - `scripts/telegram_send.py` — 텔레그램 봇 API로 메시지 전송.
 - `scripts/telegram_poll.py` — 텔레그램 메시지를 가져오고(getUpdates) 답장을 보내는(sendMessage) 헬퍼.
 - `scripts/portfolio_commands.py` — `/buy`, `/sell`, `/list` 명령어 파싱 및 `portfolio.json` 반영 로직.
-- `main.py` — 포트폴리오 리포트 진입점. 미장 마감 후 GitHub Actions가 실행.
+- `report_main.py` — 포트폴리오 리포트 진입점. 미장 마감 후 GitHub Actions가 실행. (Vercel이 `main.py`를 자동으로 Python 앱 엔트리포인트로 오인해서 이 이름을 씁니다)
 - `news_main.py` — 뉴스 브리핑 진입점. 매일 아침 7시 30분 GitHub Actions가 실행.
 - `commands_main.py` — 텔레그램 명령어 폴링 진입점(구버전, 5분 간격). **Vercel webhook 설정 후엔 꺼두세요** (아래 참고).
 - `.telegram_offset` — 폴링 방식이 마지막으로 처리한 텔레그램 메시지 번호. webhook으로 전환하면 더는 쓰이지 않음.
