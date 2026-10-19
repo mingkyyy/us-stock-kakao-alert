@@ -98,6 +98,8 @@ def github_get_portfolio(owner: str, repo: str, token: str) -> tuple[list[dict],
         headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"},
         timeout=10,
     )
+    if not resp.ok:
+        print(f"github GET portfolio failed ({resp.status_code}): {resp.text}")
     resp.raise_for_status()
     data = resp.json()
     content = base64.b64decode(data["content"]).decode("utf-8")
@@ -114,15 +116,20 @@ def github_put_portfolio(owner: str, repo: str, token: str, portfolio: list[dict
         json={"message": message, "content": content_b64, "sha": sha},
         timeout=10,
     )
+    if not resp.ok:
+        print(f"github PUT portfolio failed ({resp.status_code}): {resp.text}")
     resp.raise_for_status()
 
 
 def send_telegram_message(bot_token: str, chat_id: str, text: str) -> None:
-    requests.post(
+    resp = requests.post(
         f"https://api.telegram.org/bot{bot_token}/sendMessage",
         data={"chat_id": chat_id, "text": text},
         timeout=10,
     )
+    if not resp.ok:
+        print(f"telegram sendMessage failed ({resp.status_code}): {resp.text}")
+    resp.raise_for_status()
 
 
 def process_update(update: dict) -> None:
