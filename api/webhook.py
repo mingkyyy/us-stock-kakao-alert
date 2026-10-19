@@ -154,7 +154,11 @@ def process_update(update: dict) -> None:
     reply, changed = handle_command(text, portfolio)
 
     if changed:
-        github_put_portfolio(owner, repo, gh_token, portfolio, sha, f"chore: {text} via telegram webhook")
+        try:
+            github_put_portfolio(owner, repo, gh_token, portfolio, sha, f"chore: {text} via telegram webhook")
+        except Exception as e:  # noqa: BLE001 - still want to notify the user
+            print(f"failed to save portfolio.json: {e}")
+            reply = f"{reply}\n\n⚠️ 근데 GitHub 저장에 실패했어요: {e}"
 
     send_telegram_message(bot_token, chat_id, reply)
 
