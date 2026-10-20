@@ -23,10 +23,5 @@
     "ticker": "SOXL",
     "shares": 6,
     "avg_price": 112.3067
-  },
-  {
-    "ticker": "TSLA",
-    "shares": 1,
-    "avg_price": 361.9405
   }
 ]
