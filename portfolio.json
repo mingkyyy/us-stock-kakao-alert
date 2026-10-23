@@ -23,5 +23,10 @@
     "ticker": "SOXL",
     "shares": 6,
     "avg_price": 112.3067
+  },
+  {
+    "ticker": "ENDA",
+    "shares": 1.0,
+    "avg_price": 211.52
   }
 ]
